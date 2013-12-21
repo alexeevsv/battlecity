@@ -716,6 +716,16 @@ function showCreateGameDialog() {
                 alert("please type the game name");
             }
         });
+        $("#gameName, #gamePassword").keydown(function(e){
+            if(e.keyCode == 13){
+                if (createGameValidation() === true) {
+                    var data = [$("#gameName").val().trim(), $("#gamePassword").val().trim()];
+                    socket.emit("create_new_game", data);
+                } else {
+                    alert("please type the game name");
+                }
+            }
+        })
     }).attr({
             title: "Create your game"
         })
