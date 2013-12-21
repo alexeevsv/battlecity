@@ -280,16 +280,138 @@ body {
     top: 26px;
 }
 
-#moveRightBtn{
+#moveRightBtn {
     right: 0px;
     top: 26px;
 }
 
-#fireBtn{
+#fireBtn {
     position: absolute;
     right: -118px;
     top: 410px;
     width: 100px;
     height: 80px;
     display: none;
+}
+
+#playerNameWrapper {
+    position: absolute;
+    bottom: 0px;
+    font-size: 15px;
+    background-color: transparent;
+    width: 100px;
+}
+
+#playerNameWrapper input[type=text] {
+    text-align: center;
+    margin-top: 9px;
+}
+
+#changeNameBtn {
+    height: 20px;
+    font: bold 0.8em/0.8em "Helvetica Neue", Arial, Helvetica, Geneva, sans-serif;
+}
+
+#playerScores {
+    position: absolute;
+    left: -129px;
+    top: 60px;
+    background-image: url(../resources/buttons_bg.jpg);
+    border: 3px outset rgb(196, 183, 183);
+    border-radius: .5em;
+    text-align: center;
+    font: bold 0.9em/1.2em "Helvetica Neue", Arial, Helvetica, Geneva, sans-serif;
+    text-shadow: hsla(0, 0%, 40%, .5) 0 -1px 0, hsla(0, 0%, 100%, .6) 0 2px 1px;
+    width: 110px;
+    height: 184px;
+}
+
+#playerScores ul {
+    padding: 0px 10px;
+}
+
+#p1Wrapper, #p2Wrapper, #p3Wrapper {
+    display: none;
+}
+
+#currentWeapon {
+    position: absolute;
+    right: -129px;
+    top: 405px;
+    background-image: url(../resources/buttons_bg.jpg);
+    border: 3px outset rgb(196, 183, 183);
+    border-radius: .5em;
+    text-align: center;
+    font: bold 0.9em/1.2em "Helvetica Neue", Arial, Helvetica, Geneva, sans-serif;
+    text-shadow: hsla(0, 0%, 40%, .5) 0 -1px 0, hsla(0, 0%, 100%, .6) 0 2px 1px;
+    width: 110px;
+    height: 100px;
+}
+
+#weaponImage {
+    width: 64px;
+    height: 64px;
+    top: 18px;
+    left: 23px;
+    margin: 0px;
+}
+
+#ammoAmount {
+    position: absolute;
+    width: 100%;
+    bottom: 0px;
+}
+
+#lastEvent {
+    position: absolute;
+    left: -129px;
+    top: 405px;
+    background-image: url(../resources/buttons_bg.jpg);
+    border: 3px outset rgb(196, 183, 183);
+    border-radius: .5em;
+    text-align: center;
+    font: bold 0.9em/1.2em "Helvetica Neue", Arial, Helvetica, Geneva, sans-serif;
+    text-shadow: hsla(0, 0%, 40%, .5) 0 -1px 0, hsla(0, 0%, 100%, .6) 0 2px 1px;
+    width: 110px;
+    height: 100px;
+}
+
+#eventMessage {
+    bottom: 0px;
+    position: absolute;
+    width: 100%;
+}
+
+#eventImage {
+    width: 64px;
+    height: 64px;
+    top: 18px;
+    left: 23px;
+    margin: 0px;
+}
+
+#timer {
+    width: 110px;
+    height: 20px;
+    border: 3px outset rgb(90, 87, 87);
+    border-radius: .5em;
+    position: absolute;
+    left: -129px;
+    top: 370px;
+    background-image: url(../resources/buttons_bg.jpg);
+    display: none;
+}
+
+#timerLine {
+    background-color: rgba(183, 136, 37, 0.87);
+    height: 100%;
+}
+
+#timerTitle {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    text-align: center;
+    font: bold 0.9em/1.2em "Helvetica Neue", Arial, Helvetica, Geneva, sans-serif;
 }

@@ -57,14 +57,16 @@ var keyCodes = {
     37: "left",
     39: "right",
     32: "stop",  //space key
-    90: "fire"
+    90: "fire",
+    88: "change_weapon"
 };
 
 var keysPressed = {
     38: false,
     40: false,
     37: false,
-    39: false
+    39: false,
+    90: false
 }
 
 var imagePosition = {
@@ -117,7 +119,19 @@ var imagePosition = {
         {x: 32, y: 224},
         {x: 64, y: 224},
         {x: 96, y: 224}
-    ]
+    ],
+    mine: {
+        x: 96, y: 32
+    },
+    cannon: {
+        x: 128, y: 32
+    },
+    crate: {
+        x: 160, y: 32
+    },
+    invincibility: {
+        x: 64, y: 64
+    }
 
 }
 

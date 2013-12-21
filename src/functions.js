@@ -164,11 +164,15 @@ function authorizePlayer(data) {
     if (data[0] === true) {
         currentPlayer = new Player(data[2].x, data[2].y, data[1]);
 
-        var bonus;
-        for (var bonusName in data[3]) {
-            bonus = data[3][bonusName];
-            effectsCanvas.drawImage(engine.image, imagePosition[bonusName].x, imagePosition[bonusName].y, 32, 32, bonus.x, bonus.y, 32, 32);
-        }
+        setTimeout(function () {
+            var bonus;
+            for (var bonusName in data[3]) {
+                bonus = data[3][bonusName];
+                effectsCanvas.drawImage(engine.image, imagePosition[bonusName].x, imagePosition[bonusName].y, 32, 32, bonus.x, bonus.y, 32, 32);
+            }
+            weaponsCanvas.drawImage(engine.image, imagePosition.cannon.x, imagePosition.cannon.y, 32, 32, 0, 0, 64, 64);
+            socket.emit("get_current_weapon", {gameId: currentGameId, playerNumber: currentPlayer.playerNumber});
+        }, 1000);
 
         document.addEventListener("keydown", addListener);
 
@@ -195,6 +199,8 @@ function authorizePlayer(data) {
                 $("#someMessage").html("You are the host");
             }
         }
+
+        $("#ammoAmount").html("0");
 
         setInterval(checkPlayer, 200);
         setInterval(checkPing, 1000);
@@ -246,18 +252,10 @@ function addListener(event) {
     var keyCode = event.keyCode;
     if (keyCodes[keyCode] != undefined) {
 
-        if (keyCode != 90) {
-            for (var key in keysPressed) {
-                if (key == keyCode) {
-                    keysPressed[key] = true;
-                } else {
-                    keysPressed[key] = false;
-                }
-            }
-        }
+        if (keysPressed[keyCode] != undefined)
+            keysPressed[keyCode] = true;
 
-
-        if (keyCode != prevKeyCode && prevKeyCode != 0 && keyCode != 90) {
+        if (keyCode != prevKeyCode && prevKeyCode != 0 && keyCode != 90 && keyCode != 88) {
             justStartedMoving = true;
             clearInterval(prevMoveInterval);
         }
@@ -276,12 +274,9 @@ function addListener(event) {
             case 39:
                 direction = directions.right;
                 break;
-            case 90:
-                socket.emit("fire", {
-                    playerNumber: currentPlayer.playerNumber,
-                    direction: currentPlayer.direction,
-                    gameId: currentGameId
-                })
+            case 88:
+                console.log("weapon switched");
+                socket.emit("change_weapon", {gameId: currentGameId, playerNumber: currentPlayer.playerNumber});
                 break;
         }
 
@@ -300,8 +295,29 @@ function addListener(event) {
             }
         }
 
+        // firing
+        if (keysPressed[90] === true) {
+            if (fireInterval == undefined) {
+                socket.emit("fire", {
+                    playerNumber: currentPlayer.playerNumber,
+                    direction: currentPlayer.direction,
+                    gameId: currentGameId
+                });
+                fireInterval = setInterval(function () {
+                    if (keysPressed[90] === true) {
+                        socket.emit("fire", {
+                            playerNumber: currentPlayer.playerNumber,
+                            direction: currentPlayer.direction,
+                            gameId: currentGameId
+                        })
+                    } else {
+                        clearInterval(fireInterval);
+                        fireInterval = undefined;
+                    }
+                }, 450)
+            }
+        }
     }
-
 }
 
 function move(direction) {
@@ -363,6 +379,11 @@ function applyBonus(data) {
     //data[2] - bonusPosition
     //data[3] - hitPoints
     //data[4] - armor
+    //data[5] - player inventory
+    //data[6] - crate bonus (if crate picked up)
+
+    var bonusTitle = (data[6] !== null ? data[6] : data[0] );
+
     effectsCanvas.clearRect(data[2].x, data[2].y, 32, 32);
     if (currentPlayer.playerNumber == data[1]) {
         $("#hitPoints").html(data[3]).css({
@@ -371,6 +392,47 @@ function applyBonus(data) {
         $("#armor").html(data[4]).css({
             width: data[4] + "%"
         });
+
+        for (var key in data[5]) {
+            if (data[5].hasOwnProperty(key) && key === currentPlayer.currentWeapon) {
+                $("#ammoAmount").html(data[5][key]);
+            }
+        }
+
+        showEvent(bonusTitle);
+
+    }
+
+
+
+}
+
+function showEvent(title) {
+
+    $("#eventTitle").html("You picked up")
+    $("#eventMessage").html(title);
+    eventsCanvas.clearRect(0, 0, 64, 64);
+
+    if (imagePosition[title] !== undefined) {
+        eventsCanvas.drawImage(engine.image, imagePosition[title].x, imagePosition[title].y, 32, 32, 0, 0, 64, 64);
+        if (title == "invincibility") {
+            var width, startWidth;
+
+            $("#timer").show();
+            $("#timerTitle").html("invincibility");
+            $("#timerLine").css({width: "100%"});
+            startWidth = width = parseInt($("#timerLine").css("width"));
+            clearInterval(invincibilityInterval);
+            invincibilityInterval = setInterval(function () {
+                width = width - (startWidth * 0.05);
+                if (width <= 0) {
+                    console.log("stopped");
+                    clearInterval(invincibilityInterval);
+                    $("#timer").hide();
+                }
+                $("#timerLine").css({width: width});
+            }, 1000)
+        }
     }
 }
 
@@ -380,18 +442,47 @@ function createBonus(data) {
     effectsCanvas.drawImage(engine.image, imagePosition[data[0]].x, imagePosition[data[0]].y, 32, 32, data[1].x, data[1].y, 32, 32);
 }
 
-function startBullet(data) {
+function startProjectile(data) {
     //data[0] - bulletNum
     //data[1] - xPos
     //data[2] - yPos
     //data[3] - direction
     //data[4] - playerNumber
+    //data[5] - weaponType
+    //data[6] - ammo
+
+    switch (data[5]) {
+        case "cannon":
+            createBullet(data);
+            break;
+        case "mine":
+            createMine(data);
+            break;
+    }
+
+    $("#ammoAmount").html(data[6]);
+
+    if (data[6] == 0) {
+        socket.emit("get_current_weapon", {gameId: currentGameId, playerNumber: currentPlayer.playerNumber});
+    }
+
+
+}
+
+function createBullet(data) {
     var bullet = new Bullet({
         x: data[1],
         y: data[2]
     }, data[3], 13, data[4]);
     bullet.start();
     bullets[data[0]] = bullet;
+}
+
+function createMine(data) {
+    var x = data[1];
+    var y = data[2];
+
+    bottomCanvas.drawImage(engine.image, imagePosition.mine.x, imagePosition.mine.y, 32, 32, x, y, 32, 32);
 }
 
 function handleExplosion(data) {
@@ -444,6 +535,7 @@ function drawMap(data) {
     // bottomCanvas.fillStyle = "#079E40";
     // bottomCanvas.fillRect(0, 0, bottomField.width, bottomField.height);
     mapCanvas.clearRect(0, 0, bottomField.width, bottomField.height);
+    bottomCanvas.clearRect(0, 0, bottomField.width, bottomField.height);
 
     var block;
     for (var key in map) {
@@ -475,7 +567,7 @@ function checkPing() {
 /* receives players collection from server, manages client players collection, if player does not exist it will create it */
 
 function handlePlayer(data) {
-    //data - players collection from server
+
     var t1 = [], t2 = [], iAmOnline = false;
     for (var i = 1; i <= maxPlayersAmount; i++) {
         t1.push(i);
@@ -506,6 +598,15 @@ function handlePlayer(data) {
         _alert("Lost connection", "Please reload page");
         clearInterval(checkConnectionInterval);
     }
+
+    $("#p1Wrapper, #p2Wrapper, #p3Wrapper").hide();
+    for (var key in data) {
+        if (data.hasOwnProperty(key)) {
+            $("#p" + data[key].playerNumber + "Wrapper").show();
+            $("#p" + data[key].playerNumber).html(data[key].playerName);
+            $("#p" + data[key].playerNumber + "Score").html(data[key].score);
+        }
+    }
     lastConnectionCheck = Date.now();
 }
 
@@ -514,7 +615,7 @@ function checkPlayer() {
         gameId: currentGameId,
         playerNumber: currentPlayer.playerNumber,
         clientHash: clientHash,
-        ping : currentPing
+        ping: currentPing
     });
 }
 
@@ -660,6 +761,9 @@ function establishConnect(gameId) {
             bottomField = document.getElementById("bottom");
             bottomCanvas = bottomField.getContext("2d");
             effectsCanvas = document.getElementById("effects").getContext("2d");
+            weaponsCanvas = document.getElementById("weaponImage").getContext("2d");
+            eventsCanvas = document.getElementById("eventImage").getContext("2d");
+
             socket.emit("player_connected", {
                 clientHash: clientHash,
                 gameId: currentGameId
@@ -729,16 +833,26 @@ function countObjElements(obj) {
 }
 
 function handleChangeName() {
-    if ($("#changeNameBtn").html() == "change") {
+    if ($("#changeNameBtn").html() == "change nick") {
         $("#playerName").hide();
         $("<input/>").attr({
             type: "text",
-            id: "playerNameInput"
-        }).val("no nick").insertAfter("#playerName");
+            id: "playerNameInput",
+            size: 10
+        })
+            .val($("#playerName").html())
+            .keydown(changePlayerName)
+            .insertAfter("#playerName");
         $("#changeNameBtn").html("apply");
     } else if ($("#changeNameBtn").html() == "apply") {
+        changePlayerName();
+    }
+}
+
+function changePlayerName(e) {
+    if (e == undefined || (e != undefined && e.keyCode == 13)) {
         $("#playerName").show().html($("#playerNameInput").val().slice(0, 7));
-        $("#changeNameBtn").html("change");
+        $("#changeNameBtn").html("change nick");
 
         socket.emit("change_player_name", {
             gameId: currentGameId,
@@ -773,5 +887,34 @@ function redefineHost(data) {
     if (data.playerNumber == currentPlayer.playerNumber) {
         showHostBtns();
         $("#someMessage").html("You are the host");
+    }
+}
+
+function changeWeapon(data) {
+    weaponsCanvas.clearRect(0, 0, 64, 64);
+    if (imagePosition[data.currentWeapon] !== undefined) {
+        currentPlayer.currentWeapon = data.currentWeapon;
+        weaponsCanvas.drawImage(engine.image, imagePosition[data.currentWeapon].x, imagePosition[data.currentWeapon].y, 32, 32, 0, 0, 64, 64);
+        $("#ammoAmount").html(data.ammo);
+    }
+}
+
+function explodeMine(data) {
+    //data[0] - playerNumber
+    //data[1] - mine position {x : 0, y : 0}
+    //data[2] - player hit points
+    //data[3] - player armor
+
+    explode(data[1].x, data[1].y);
+    bottomCanvas.clearRect(data[1].x, data[1].y, 32, 32);
+
+    if (currentPlayer.playerNumber == data[0]) {
+        $("#hitPoints").html(data[2]).css({
+            width: data[2] + "%"
+        });
+        $("#armor").html(data[3]).css({
+            width: data[3] + "%"
+        });
+        socket.emit("get_current_weapon", {gameId: currentGameId, playerNumber: currentPlayer.playerNumber});
     }
 }

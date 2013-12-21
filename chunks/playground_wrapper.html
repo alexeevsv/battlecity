@@ -4,9 +4,6 @@
     <canvas id="playGround" width="512" height="512"></canvas>
     <canvas id="map" width="512" height="512"></canvas>
     <canvas id="effects" width="512" height="512"></canvas>
-
-    <!-- <div id="movementKeysLegend">Movement : arrow keys; Fire : z</div>
-    <div id="playerNameWrapper">Your nickname is : <span id="playerName">"no nick"</span><button id="changeNameBtn">change</button></div> -->
 </div>
 
 <div id="playerStats">
@@ -35,7 +32,35 @@
     <button id="moveRightBtn" class="metal linear" direction="right">right</button>
 </div>
 <button id="fireBtn" class="metal linear">fire</button>
-
 <div id="someMessage" class="metal"></div>
+<div id="playerScores">
+    Players:
+    <ul>
+        <li id="p1Wrapper"><span id="p1">Player 1</span>:&nbsp;<span id="p1Score">0</span></li>
+        <li id="p2Wrapper"><span id="p2">Player 2</span>:&nbsp;<span id="p2Score">0</span></li>
+        <li id="p3Wrapper"><span id="p3">Player 3</span>:&nbsp;<span id="p3Score">0</span></li>
+    </ul>
 
-
+    <div id="playerNameWrapper" class="metal">
+        <div>
+            <button id="changeNameBtn" class="metal linear">change nick</button>
+        </div>
+        <div><span id="playerName">no nick</span></div>
+    </div>
+</div>
+<div id="currentWeapon">
+    Weapon:
+    <canvas id="weaponImage" width="64" height="64">
+    </canvas>
+    <div id="ammoAmount">0</div>
+</div>
+<div id="lastEvent">
+    <div id="eventTitle">Events</div>
+    <canvas id="eventImage" width="64" height="64">
+    </canvas>
+    <div id="eventMessage"></div>
+</div>
+<div id="timer">
+    <div id="timerLine"></div>
+    <div id="timerTitle"></div>
+</div>

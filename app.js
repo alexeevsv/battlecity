@@ -87,7 +87,14 @@ function start() {
             if (games[data.gameId] != undefined) {
                 socket.join(data.gameId);
                 try {
-                    socket.emit('authorizing', [connection.mayConnect, connection.playerNumber, connection.clientPosition, games[data.gameId].bonuses, games[data.gameId].players]);
+                    //TODO : change players object
+                    socket.emit('authorizing', [
+                        connection.mayConnect,
+                        connection.playerNumber,
+                        connection.clientPosition,
+                        games[data.gameId].bonuses,
+                        playersData(data.gameId)
+                    ]);
                 } catch (e) {
                     logEvent("passing current game data error: " + e.message);
                 }
@@ -114,13 +121,28 @@ function start() {
             if (games[data.gameId] != undefined) {
                 var player = games[data.gameId].players[data.playerNumber],
                     shot;
-                if (player != undefined && player.canFire === true && player.alive === true) {
+                if (player !== undefined && player.canFire === true && player.alive === true && player.currentWeapon !== undefined) {
                     shot = fire(data);
                     try {
-                        io.sockets.in(data.gameId).emit("bullet_started", [shot.bulletNum, shot.sx, shot.sy, data.direction, data.playerNumber]);
+                        io.sockets.in(data.gameId).emit("projectile_started",
+                            [shot.projectileNum, shot.sx, shot.sy, data.direction, data.playerNumber, player.currentWeapon, player.inventory[player.currentWeapon]]
+                        );
+                        player.checkAmmo();
                     } catch (e) {
                         logEvent(e.stack);
                     }
+                }
+            }
+        });
+
+        socket.on("change_weapon", function (data) {
+            var player;
+
+            if (games[data.gameId] != undefined) {
+                player = games[data.gameId].players[data.playerNumber];
+                if (player != undefined) {
+                    player.switchWeapon();
+                    socket.emit("change_weapon", {currentWeapon: player.currentWeapon, ammo: player.inventory[player.currentWeapon]});
                 }
             }
         });
@@ -129,13 +151,15 @@ function start() {
         socket.on("check_player", function (data) {
             var playerNumber = data.playerNumber,
                 gameId = data.gameId;
+
             if (games[gameId] != undefined) {
                 if (games[gameId].players[playerNumber] != undefined) {
                     games[gameId].players[playerNumber].lastUpdate = parseInt(Date.now() / 1000);
                     games[gameId].players[playerNumber].addPing(data.ping);
                 }
                 try {
-                    io.sockets.in(gameId).emit("check_player", games[gameId].players);
+                    //TODO : change players object
+                    io.sockets.in(gameId).emit("check_player", playersData(gameId));
                 } catch (e) {
                     logEvent(e.stack);
                 }
@@ -206,15 +230,49 @@ function start() {
             }
         });
 
+        socket.on("get_current_weapon", function (data) {
+            var player;
+
+            if (games[data.gameId] !== undefined) {
+                player = games[data.gameId].players[data.playerNumber];
+                if (player !== undefined) {
+                    socket.emit("get_current_weapon", {currentWeapon: player.currentWeapon, ammo: player.inventory[player.currentWeapon]});
+                }
+            }
+        });
+
         setInterval(checkPlayersConnections, 200);
 
         setInterval(checkBulletsExistanse, 5);
 
-        setInterval(handleBonuses, 20000)
+        setInterval(handleBonuses, 2000)
 
     });
 
 
+}
+
+function playersData(gameId) {
+    // playerNumber, playerName, host, position, hitPoints, armor, hashCode, score
+    var player, data = {};
+    if (games[gameId] !== undefined) {
+        for (var key in games[gameId].players) {
+            if (games[gameId].players.hasOwnProperty(key)) {
+                player = games[gameId].players[key];
+                data[key] = {
+                    playerName: player.playerName,
+                    playerNumber: player.playerNumber,
+                    host: player.host,
+                    position: player.position,
+                    hitPoints: player.hitPoints,
+                    armor: player.armor,
+                    hashCode: player.hashCode,
+                    score: player.score
+                }
+            }
+        }
+    }
+    return data;
 }
 
 function isCorrectPassword(gameId, password) {
@@ -258,6 +316,7 @@ function createGame(data) {
         players: {},
         bonuses: {},
         bullets: {},
+        mines: {},
         map: {}
     };
     initMap(gameId);
@@ -273,6 +332,25 @@ function countObjElements(obj) {
         }
     }
     return i;
+}
+
+function handlePlayerDeath(gameId, player, killerPlayerNumber) {
+
+    if (player.playerNumber !== killerPlayerNumber) {
+        games[gameId].players[killerPlayerNumber].score++;
+    }
+    player.position.x = undefined;
+    player.position.y = undefined;
+    try {
+        io.sockets.in(gameId).emit("player_died", [player.playerNumber, player.position, killerPlayerNumber, games[gameId].players[killerPlayerNumber].score]);
+    } catch (e) {
+        logEvent(e.stack);
+    }
+    var tempPlayerNumber = player.playerNumber;
+    setTimeout(function () {
+        resumePlayer(tempPlayerNumber, gameId);
+        io.sockets.in(gameId).emit("get_current_weapon", {currentWeapon: player.currentWeapon, ammo: player.inventory[player.currentWeapon]});
+    }, 3000);
 }
 
 /* calculates button collision with players and walls */
@@ -292,18 +370,7 @@ function calculateBulletCollision(gameId) {
                     logEvent(e.stack);
                 }
                 if (player.alive === false) {
-                    games[gameId].players[bullet.playerNumber].score++;
-                    player.position.x = undefined;
-                    player.position.y = undefined;
-                    try {
-                        io.sockets.in(gameId).emit("player_died", [player.playerNumber, player.position, bullet.playerNumber, games[gameId].players[bullet.playerNumber].score]);
-                    } catch (e) {
-                        logEvent(e.stack);
-                    }
-                    var tempPlayerNumber = player.playerNumber;
-                    setTimeout(function () {
-                        resumePlayer(tempPlayerNumber, gameId);
-                    }, 3000);
+                    handlePlayerDeath(gameId, player, bullet.playerNumber);
                 }
                 break;
             }
@@ -464,13 +531,22 @@ function move(data) {
             }
 
             /* bonuses collision check */
-            var bonus;
+            var bonus,
+                crateBonus;
             for (var bonusName in games[gameId].bonuses) {
                 bonus = games[gameId].bonuses[bonusName];
                 if ((player.position.x >= bonus.x - 29 && player.position.x <= bonus.x + 29) && (player.position.y >= bonus.y - 29 && player.position.y <= bonus.y + 29)) {
-                    player.applyBonus(bonusName);
+                    crateBonus = player.applyBonus(bonusName);
                     try {
-                        io.sockets.in(gameId).emit("bonus_picked_up", [bonusName, currentPlayerNumber, bonus, games[gameId].players[currentPlayerNumber].hitPoints, games[gameId].players[currentPlayerNumber].armor]);
+                        io.sockets.in(gameId).emit("bonus_picked_up", [
+                            bonusName,
+                            currentPlayerNumber,
+                            bonus,
+                            player.hitPoints,
+                            player.armor,
+                            player.inventory,
+                            crateBonus
+                        ]);
                     } catch (e) {
                         logEvent(e.stack);
                     }
@@ -478,6 +554,34 @@ function move(data) {
                     break;
                 }
             }
+
+            /* mines collision check */
+            var mine;
+            for (var m in games[gameId].mines) {
+                mine = games[gameId].mines[m];
+                if ((player.position.x >= mine.position.x - 29 && player.position.x <= mine.position.x + 29) && (player.position.y >= mine.position.y - 29 && player.position.y <= mine.position.y + 29) && mine.activated === true) {
+                    //TODO : count player HP after explosion
+                    player.shot(Enum.weaponDamage[Enum.weapons.mine]);
+                    try {
+                        io.sockets.in(gameId).emit("mine_explode", [
+                            currentPlayerNumber,
+                            mine.position,
+                            player.hitPoints,
+                            player.armor
+                        ]);
+                    } catch (e) {
+                        logEvent(e.stack);
+                    }
+                    delete games[gameId].mines[m];
+
+                    if (player.alive === false) {
+                        handlePlayerDeath(gameId, player, mine.playerNumber);
+                    }
+
+                    break;
+                }
+            }
+
         }
     }
 
@@ -488,24 +592,54 @@ function fire(data) {
 
     var sx = player.position.x; // start position x
     var sy = player.position.y; // start position y
+
+    var projectileNum = parseInt(Date.now() / 1000) + "" + parseInt(Math.random() * 1000);
+
+    switch (player.currentWeapon) {
+        case Enum.weapons.cannon :
+            createBullet(player, sx, sy, data, projectileNum);
+            break;
+        case Enum.weapons.mine:
+            createMine(player, sx, sy, data, projectileNum);
+            break;
+    }
+
+    player.inventory[player.currentWeapon]--;
+
+    return {
+        projectileNum: projectileNum,
+        sx: sx,
+        sy: sy
+    };
+}
+
+function createMine(player, sx, sy, data, projectileNum) {
+    games[data.gameId].mines[projectileNum] = {position: {x: sx, y: sy}, activated: false, playerNumber: player.playerNumber};
+    setTimeout(function () {
+        activateMine(data.gameId, projectileNum);
+    }, 2000);
+}
+
+function activateMine(gameId, mineId) {
+    if (games[gameId] !== undefined && games[gameId].mines[mineId] !== undefined) {
+        games[gameId].mines[mineId].activated = true;
+    }
+}
+
+function createBullet(player, sx, sy, data, projectileNum) {
     var bullet = new Bullet({
         x: sx,
         y: sy
     }, data.direction, Enum.bulletSpeed, data.playerNumber);
+
     bullet.start();
-    var bulletNum = parseInt(Date.now() / 1000) + "" + parseInt(Math.random() * 1000);
-    games[data.gameId].bullets[bulletNum] = bullet;
+
+    games[data.gameId].bullets[projectileNum] = bullet;
 
     player.canFire = false;
     setTimeout(function () {
         player.canFire = true;
     }, player.fireInterval);
-
-    return {
-        bulletNum: bulletNum,
-        sx: sx,
-        sy: sy
-    };
 }
 
 function redefineHost(gameId) {
@@ -587,7 +721,7 @@ function playerConnection(data) {
             games[data.gameId].players[playerNumber].position.x = clientPosition.x;
             games[data.gameId].players[playerNumber].position.y = clientPosition.y;
             games[data.gameId].players[playerNumber].lastUpdate = parseInt(Date.now() / 1000);
-            games[data.gameId].players[playerNumber].playerName = "p" + playerNumber;
+            games[data.gameId].players[playerNumber].playerName = "Player " + playerNumber;
             games[data.gameId].players[playerNumber].host = host;
         }
 

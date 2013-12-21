@@ -4,7 +4,8 @@ function Player(x, y, playerNumber) {
     this.playerNumber = playerNumber;
     this.direction = this.prevDirection = directions.up;
     this.alive = true;
-    this.playerName = "p" + playerNumber;
+    this.playerName = "Player " + playerNumber;
+    this.currentWeapon = "cannon";
 
     this.render = function () {
         var angle = this.figureAngle(this.direction);
