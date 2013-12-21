@@ -245,7 +245,7 @@ function start() {
 
         setInterval(checkBulletsExistanse, 5);
 
-        setInterval(handleBonuses, 2000)
+        setInterval(handleBonuses, 20000)
 
     });
 
@@ -338,6 +338,8 @@ function handlePlayerDeath(gameId, player, killerPlayerNumber) {
 
     if (player.playerNumber !== killerPlayerNumber) {
         games[gameId].players[killerPlayerNumber].score++;
+    } else {
+        games[gameId].players[player.playerNumber].score--;
     }
     player.position.x = undefined;
     player.position.y = undefined;
@@ -617,7 +619,7 @@ function createMine(player, sx, sy, data, projectileNum) {
     games[data.gameId].mines[projectileNum] = {position: {x: sx, y: sy}, activated: false, playerNumber: player.playerNumber};
     setTimeout(function () {
         activateMine(data.gameId, projectileNum);
-    }, 2000);
+    }, 500);
 }
 
 function activateMine(gameId, mineId) {
@@ -701,6 +703,7 @@ function handleBonuses() {
             if (bonus != undefined) {
                 io.sockets.in(gameId).emit("bonus_appeared", bonus);
             }
+            break;
         }
     }
 }
