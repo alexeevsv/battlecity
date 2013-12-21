@@ -404,7 +404,6 @@ function applyBonus(data) {
     }
 
 
-
 }
 
 function showEvent(title) {
@@ -460,7 +459,8 @@ function startProjectile(data) {
             break;
     }
 
-    $("#ammoAmount").html(data[6]);
+    if (data[4] == currentPlayer.playerNumber)
+        $("#ammoAmount").html(data[6]);
 
     if (data[6] == 0) {
         socket.emit("get_current_weapon", {gameId: currentGameId, playerNumber: currentPlayer.playerNumber});
