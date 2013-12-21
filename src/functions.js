@@ -843,6 +843,7 @@ function handleChangeName() {
             .val($("#playerName").html())
             .keydown(changePlayerName)
             .insertAfter("#playerName");
+        $("#playerNameInput").select();
         $("#changeNameBtn").html("apply");
     } else if ($("#changeNameBtn").html() == "apply") {
         changePlayerName();
