@@ -703,7 +703,6 @@ function handleBonuses() {
             if (bonus != undefined) {
                 io.sockets.in(gameId).emit("bonus_appeared", bonus);
             }
-            break;
         }
     }
 }
