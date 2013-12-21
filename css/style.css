@@ -430,6 +430,10 @@ body {
     height: 100px;
 }
 
-#legendText{
+#legendText {
     margin-top: 5px;
+}
+
+#gameName, #gamePassword {
+    text-align: center;
 }
