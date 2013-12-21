@@ -396,7 +396,7 @@ body {
     border: 3px outset rgb(90, 87, 87);
     border-radius: .5em;
     position: absolute;
-    left: -129px;
+    right: -129px;
     top: 370px;
     background-image: url(../resources/buttons_bg.jpg);
     display: none;
