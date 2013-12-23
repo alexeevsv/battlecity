@@ -93,7 +93,8 @@ function start() {
                         connection.playerNumber,
                         connection.clientPosition,
                         games[data.gameId].bonuses,
-                        playersData(data.gameId)
+                        playersData(data.gameId),
+                        games[data.gameId].mines
                     ]);
                 } catch (e) {
                     logEvent("passing current game data error: " + e.message);
@@ -158,7 +159,6 @@ function start() {
                     games[gameId].players[playerNumber].addPing(data.ping);
                 }
                 try {
-                    //TODO : change players object
                     io.sockets.in(gameId).emit("check_player", playersData(gameId));
                 } catch (e) {
                     logEvent(e.stack);
@@ -253,7 +253,6 @@ function start() {
 }
 
 function playersData(gameId) {
-    // playerNumber, playerName, host, position, hitPoints, armor, hashCode, score
     var player, data = {};
     if (games[gameId] !== undefined) {
         for (var key in games[gameId].players) {
@@ -336,15 +335,23 @@ function countObjElements(obj) {
 
 function handlePlayerDeath(gameId, player, killerPlayerNumber) {
 
+    var killerScore = 0;
+
     if (player.playerNumber !== killerPlayerNumber) {
-        games[gameId].players[killerPlayerNumber].score++;
+        if (games[gameId].players[killerPlayerNumber] !== undefined)
+            killerScore = ++games[gameId].players[killerPlayerNumber].score;
     } else {
         games[gameId].players[player.playerNumber].score--;
     }
     player.position.x = undefined;
     player.position.y = undefined;
     try {
-        io.sockets.in(gameId).emit("player_died", [player.playerNumber, player.position, killerPlayerNumber, games[gameId].players[killerPlayerNumber].score]);
+        io.sockets.in(gameId).emit("player_died", [
+            player.playerNumber,
+            player.position,
+            killerPlayerNumber,
+            killerScore
+        ]);
     } catch (e) {
         logEvent(e.stack);
     }
@@ -365,7 +372,7 @@ function calculateBulletCollision(gameId) {
             player = games[gameId].players[p];
             if ((bullet.position.x >= player.position.x - 2 && bullet.position.x <= player.position.x + 32) && (bullet.position.y >= player.position.y && bullet.position.y <= player.position.y + 32) && (bullet.playerNumber != p)) {
                 bullet.stop();
-                player.shot(Enum.weaponDamage[games[gameId].players[bullet.playerNumber].currentWeapon]);
+                player.shot(bullet.damage);
                 try {
                     io.sockets.in(gameId).emit("explosion", [b, player.position, undefined, player.playerNumber, player.hitPoints, player.armor]);
                 } catch (e) {
@@ -382,7 +389,7 @@ function calculateBulletCollision(gameId) {
             block = games[gameId].map[key];
             if ((block.m == "wall") && (bullet.position.x >= block.x && bullet.position.x <= block.x + 32) && (bullet.position.y >= block.y && bullet.position.y <= block.y + 32)) {
                 if (block.l > 0) {
-                    block.l--;
+                    block.l -= bullet.damage;
                     if (block.l <= 0) {
                         delete games[gameId].map[key];
                     }
@@ -443,7 +450,7 @@ function createBonus(gameId) {
         var rndBonus = Enum.bonusArray[parseInt(Math.random() * Enum.bonusArray.length)];
         if (games[gameId].bonuses[rndBonus] == undefined) {
             var position = calculateStartPosition(gameId);
-            games[gameId].bonuses[rndBonus] = position;
+            games[gameId].bonuses[rndBonus] = {position: position, createdTime: Date.now()};
             return [rndBonus, position];
         }
     }
@@ -537,7 +544,11 @@ function move(data) {
                 crateBonus;
             for (var bonusName in games[gameId].bonuses) {
                 bonus = games[gameId].bonuses[bonusName];
-                if ((player.position.x >= bonus.x - 29 && player.position.x <= bonus.x + 29) && (player.position.y >= bonus.y - 29 && player.position.y <= bonus.y + 29)) {
+                if (
+                    (player.position.x >= bonus.position.x - 29 && player.position.x <= bonus.position.x + 29)
+                        &&
+                        (player.position.y >= bonus.position.y - 29 && player.position.y <= bonus.position.y + 29)) {
+
                     crateBonus = player.applyBonus(bonusName);
                     try {
                         io.sockets.in(gameId).emit("bonus_picked_up", [
@@ -599,7 +610,8 @@ function fire(data) {
 
     switch (player.currentWeapon) {
         case Enum.weapons.cannon :
-            createBullet(player, sx, sy, data, projectileNum);
+        case Enum.weapons.rocketLauncher :
+            createBullet(player, sx, sy, data, projectileNum, player.currentWeapon);
             break;
         case Enum.weapons.mine:
             createMine(player, sx, sy, data, projectileNum);
@@ -628,11 +640,11 @@ function activateMine(gameId, mineId) {
     }
 }
 
-function createBullet(player, sx, sy, data, projectileNum) {
+function createBullet(player, sx, sy, data, projectileNum, bulletType) {
     var bullet = new Bullet({
         x: sx,
         y: sy
-    }, data.direction, Enum.bulletSpeed, data.playerNumber);
+    }, data.direction, Enum.bulletSpeed, data.playerNumber, bulletType);
 
     bullet.start();
 
@@ -700,8 +712,19 @@ function handleBonuses() {
         gameId = key.replace(/\//, "");
         if (gameId != "") {
             bonus = createBonus(gameId);
-            if (bonus != undefined) {
+            if (bonus !== undefined) {
                 io.sockets.in(gameId).emit("bonus_appeared", bonus);
+            }
+            if (games[gameId] !== undefined) {
+                for (var key in games[gameId].bonuses) {
+                    if (games[gameId].bonuses.hasOwnProperty(key)) {
+                        bonus = games[gameId].bonuses[key];
+                        if (Date.now() - bonus.createdTime >= 30000) {
+                            io.sockets.in(gameId).emit("bonus_deleted", bonus);
+                            delete games[gameId].bonuses[key];
+                        }
+                    }
+                }
             }
         }
     }
@@ -763,7 +786,8 @@ function sendBattlefieldInfo(gameId) {
                 player.prevDirection,
                 player.score,
                 key,
-                player.alive
+                player.alive,
+                player.visible
             ]);
         }
         try {

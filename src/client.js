@@ -12,7 +12,7 @@ var currentPlayer, clientHash, players = {},
     lastDataSpeedUpdate = 0,
     dataReceived = 0,
     renderInterval, currentGameId, refreshGamesInterval, isMoving = false, _moveInterval,
-    lastConnectionCheck = 0, checkConnectionInterval, currentPing, fireInterval, invincibilityInterval;
+    lastConnectionCheck = 0, checkConnectionInterval, currentPing, fireInterval, timers = {};
 
 $(function () {
 
@@ -118,6 +118,10 @@ $(function () {
 
     socket.on("mine_explode", function (data) {
         explodeMine(data);
-    })
+    });
+
+    socket.on("bonus_deleted", function(data){
+       deleteBonus(data);
+    });
 
 })

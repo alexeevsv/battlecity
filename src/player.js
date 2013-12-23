@@ -6,6 +6,7 @@ function Player(x, y, playerNumber) {
     this.alive = true;
     this.playerName = "Player " + playerNumber;
     this.currentWeapon = "cannon";
+    this.visible = true;
 
     this.render = function () {
         var angle = this.figureAngle(this.direction);
@@ -33,7 +34,7 @@ function Player(x, y, playerNumber) {
 }
 
 
-function Bullet(playerPosition, direction, speed, playerNumber) {
+function Bullet(playerPosition, direction, speed, playerNumber, bulletType) {
 
     this.position = {};
     this.direction = direction;
@@ -41,7 +42,35 @@ function Bullet(playerPosition, direction, speed, playerNumber) {
     this.interval;
     this.alive = false;
     this.playerNumber = playerNumber;
+    this.bulletType = bulletType;
+    this.angle = 0;
 
+
+    this.getBulletSize = function () {
+        switch (this.bulletType) {
+            case "cannonProjectile":
+                return {height: 4, width: 4};
+                break;
+            case "rocketLauncherProjectile" :
+                return {height: 13, width: 6};
+                break;
+        }
+    }
+
+    this.figureAngle = function (direction) {
+        var angle = 0;
+        switch (direction) {
+            case directions.right:
+                this.angle = 90;
+                break;
+            case directions.down:
+                this.angle = 180;
+                break;
+            case directions.left:
+                this.angle = 270;
+                break;
+        }
+    }
 
     this.start = function () {
         this.alive = true;
@@ -122,6 +151,7 @@ function Bullet(playerPosition, direction, speed, playerNumber) {
     }
 
     this.setStartPosition(playerPosition, direction);
+    this.figureAngle(direction);
 
 }
 

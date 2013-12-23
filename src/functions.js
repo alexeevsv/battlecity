@@ -127,7 +127,7 @@ function showDrawLevelWindow() {
             x: x,
             y: y,
             m: currentMaterial,
-            l: 4
+            l: 40
         };
     }
 
@@ -161,6 +161,7 @@ function authorizePlayer(data) {
     //data[2] - position
     //data[3] - bonuses
     //data[4] - players
+    //data[5] - mines
     if (data[0] === true) {
         currentPlayer = new Player(data[2].x, data[2].y, data[1]);
 
@@ -169,6 +170,13 @@ function authorizePlayer(data) {
             for (var bonusName in data[3]) {
                 bonus = data[3][bonusName];
                 effectsCanvas.drawImage(engine.image, imagePosition[bonusName].x, imagePosition[bonusName].y, 32, 32, bonus.x, bonus.y, 32, 32);
+            }
+            var mine;
+            for (var key in data[5]) {
+                if (data[5].hasOwnProperty(key)) {
+                    mine = data[5][key];
+                    bottomCanvas.drawImage(engine.image, imagePosition.mine.x, imagePosition.mine.y, 32, 32, mine.position.x, mine.position.y, 32, 32);
+                }
             }
             weaponsCanvas.drawImage(engine.image, imagePosition.cannon.x, imagePosition.cannon.y, 32, 32, 0, 0, 64, 64);
             socket.emit("get_current_weapon", {gameId: currentGameId, playerNumber: currentPlayer.playerNumber});
@@ -275,7 +283,6 @@ function addListener(event) {
                 direction = directions.right;
                 break;
             case 88:
-                console.log("weapon switched");
                 socket.emit("change_weapon", {gameId: currentGameId, playerNumber: currentPlayer.playerNumber});
                 break;
         }
@@ -330,10 +337,10 @@ function move(direction) {
 function render() {
     engine.clearScene();
 
-    var player;
+    var player, bulletSize;
     for (var key in players) {
         player = players[key];
-        if (player.alive) {
+        if (player.alive === true && (player.playerNumber == currentPlayer.playerNumber || player.visible == true)) {
             player.render();
         }
     }
@@ -342,7 +349,20 @@ function render() {
     for (var key in bullets) {
         bullet = bullets[key];
         if (bullet.alive === true) {
-            engine.canvas.drawImage(engine.image, imagePosition.bullet.x, imagePosition.bullet.y, 4, 4, bullet.position.x, bullet.position.y, 4, 4);
+            bulletSize = bullet.getBulletSize();
+            engine.drawImg(
+                engine.image,
+                imagePosition[bullet.bulletType].x,
+                imagePosition[bullet.bulletType].y,
+                bulletSize.width,
+                bulletSize.height,
+                bullet.position.x,
+                bullet.position.y,
+                bulletSize.width,
+                bulletSize.height,
+                true,
+                bullet.angle
+            );
         } else {
             delete bullets[key];
         }
@@ -355,6 +375,7 @@ function murderPlayer(data) {
     //data[1] - dead player position
     //data[2] - assassin player number
     //data[3] - assassin player score
+
     if (players[data[0]] != undefined) {
         players[data[0]].alive = false;
         $("#p" + data[2] + "Score").html(data[3]);
@@ -376,7 +397,7 @@ function murderPlayer(data) {
 function applyBonus(data) {
     //data[0] - bonusName
     //data[1] - playerNumber
-    //data[2] - bonusPosition
+    //data[2] - bonusData
     //data[3] - hitPoints
     //data[4] - armor
     //data[5] - player inventory
@@ -384,7 +405,7 @@ function applyBonus(data) {
 
     var bonusTitle = (data[6] !== null ? data[6] : data[0] );
 
-    effectsCanvas.clearRect(data[2].x, data[2].y, 32, 32);
+    effectsCanvas.clearRect(data[2].position.x, data[2].position.y, 32, 32);
     if (currentPlayer.playerNumber == data[1]) {
         $("#hitPoints").html(data[3]).css({
             width: data[3] + "%"
@@ -414,30 +435,49 @@ function showEvent(title) {
 
     if (imagePosition[title] !== undefined) {
         eventsCanvas.drawImage(engine.image, imagePosition[title].x, imagePosition[title].y, 32, 32, 0, 0, 64, 64);
-        if (title == "invincibility") {
-            var width, startWidth;
+        if (title == "invincibility" || title == "invisibility") {
+            var startWidth, width;
 
-            $("#timer").show();
-            $("#timerTitle").html("invincibility");
-            $("#timerLine").css({width: "100%"});
-            startWidth = width = parseInt($("#timerLine").css("width"));
-            clearInterval(invincibilityInterval);
-            invincibilityInterval = setInterval(function () {
+            /*$("#timer").show();
+             $("#timerTitle").html("invincibility");
+             $("#timerLine").css({width: "100%"});
+             startWidth = width = parseInt($("#timerLine").css("width"));
+             clearInterval(invincibilityInterval);
+             invincibilityInterval = setInterval(function () {
+             width = width - (startWidth * 0.05);
+             if (width <= 0) {
+             console.log("stopped");
+             clearInterval(invincibilityInterval);
+             $("#timer").hide();
+             }
+             $("#timerLine").css({width: width});
+             }, 1000)*/
+            $("#" + title).remove();
+            $("<div/>")
+                .attr({class: "timer", id: title})
+                .append(
+                    $("<div/>").attr({class: "timerLine", id: title + "TimeLine"})
+                        .append($("<div/>").attr({class: "timerTitle"}).html(title)))
+                .prependTo("#timers");
+            if (timers[title] !== undefined) {
+                clearInterval(timers[title]);
+            }
+            startWidth = width = parseInt($("#" + title + "TimeLine").css("width"));
+            timers[title] = setInterval(function () {
                 width = width - (startWidth * 0.05);
                 if (width <= 0) {
-                    console.log("stopped");
-                    clearInterval(invincibilityInterval);
-                    $("#timer").hide();
+                    clearInterval(timers[title]);
+                    $("#" + title).hide();
                 }
-                $("#timerLine").css({width: width});
-            }, 1000)
+                $("#" + title + "TimeLine").css({width: width});
+            }, 1000);
         }
     }
 }
 
 function createBonus(data) {
     // data[0] - bonus name
-    // data[1] - bonus position {}
+    // data[1] - bonus data {}
     effectsCanvas.drawImage(engine.image, imagePosition[data[0]].x, imagePosition[data[0]].y, 32, 32, data[1].x, data[1].y, 32, 32);
 }
 
@@ -452,7 +492,8 @@ function startProjectile(data) {
 
     switch (data[5]) {
         case "cannon":
-            createBullet(data);
+        case "rocketLauncher":
+            createBullet(data, data[5] + "Projectile");
             break;
         case "mine":
             createMine(data);
@@ -469,11 +510,11 @@ function startProjectile(data) {
 
 }
 
-function createBullet(data) {
+function createBullet(data, bulletType) {
     var bullet = new Bullet({
         x: data[1],
         y: data[2]
-    }, data[3], 13, data[4]);
+    }, data[3], 13, data[4], bulletType);
     bullet.start();
     bullets[data[0]] = bullet;
 }
@@ -492,17 +533,27 @@ function handleExplosion(data) {
     //data[3] - victim player number
     //data[4] - victim player hp
     //data[5] - victim player armor
+
+    var hp = data[2];
+
     if (bullets[data[0]] != undefined) {
         bullets[data[0]].alive = false;
     }
     explode(data[1].x, data[1].y);
 
-    if (data[2] != undefined) {
-        if (data[2] <= 0) {
+    if (hp !== undefined && hp !== null) {
+        if (hp <= 0) {
             delete map[data[1].x + "" + data[1].y];
             mapCanvas.clearRect(data[1].x, data[1].y, 32, 32);
         } else {
-            mapCanvas.drawImage(engine.image, imagePosition.crack[data[2]].x, imagePosition.crack[data[2]].y, 32, 32, data[1].x, data[1].y, 32, 32);
+            if (hp >= 30) {
+                hp = 3;
+            } else if (hp >= 20 && hp < 30) {
+                hp = 2;
+            } else {
+                hp = 1;
+            }
+            mapCanvas.drawImage(engine.image, imagePosition.crack[hp].x, imagePosition.crack[hp].y, 32, 32, data[1].x, data[1].y, 32, 32);
         }
     }
     if (currentPlayer.playerNumber == data[3]) {
@@ -640,6 +691,8 @@ function applyBattlefieldInfo(data) {
     //data[n][4] - score
     //data[n][5] - playerNumber
     //data[n][6] - player alive
+    //data[n][7] - player visible
+
     for (var i = 0; i < data.length; i++) {
         if (players[data[i][5]] != undefined) {
             players[data[i][5]].position.x = data[i][0][0];
@@ -649,6 +702,7 @@ function applyBattlefieldInfo(data) {
             players[data[i][5]].direction = data[i][2];
             players[data[i][5]].prevDirection = data[i][3];
             players[data[i][5]].alive = data[i][6];
+            players[data[i][5]].visible = data[i][7];
         }
     }
 }
@@ -716,8 +770,8 @@ function showCreateGameDialog() {
                 alert("please type the game name");
             }
         });
-        $("#gameName, #gamePassword").keydown(function(e){
-            if(e.keyCode == 13){
+        $("#gameName, #gamePassword").keydown(function (e) {
+            if (e.keyCode == 13) {
                 if (createGameValidation() === true) {
                     var data = [$("#gameName").val().trim(), $("#gamePassword").val().trim()];
                     socket.emit("create_new_game", data);
@@ -928,4 +982,8 @@ function explodeMine(data) {
         });
         socket.emit("get_current_weapon", {gameId: currentGameId, playerNumber: currentPlayer.playerNumber});
     }
+}
+
+function deleteBonus(data) {
+    effectsCanvas.clearRect(data.position.x, data.position.y, 32, 32);
 }

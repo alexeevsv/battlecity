@@ -75,9 +75,13 @@ var imagePosition = {
         2: {x: 160, y: 0},
         3: {x: 192, y: 0}
     },
-    bullet: {
+    cannonProjectile: {
         x: 252,
         y: 252
+    },
+    rocketLauncherProjectile: {
+        x: 246,
+        y: 243
     },
     water: {
         x: 0,
@@ -131,6 +135,12 @@ var imagePosition = {
     },
     invincibility: {
         x: 64, y: 64
+    },
+    invisibility: {
+        x: 96, y: 64
+    },
+    rocketLauncher: {
+        x: 128, y: 64
     }
 
 }
