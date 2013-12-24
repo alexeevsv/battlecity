@@ -383,12 +383,10 @@ function murderPlayer(data) {
 
     var reloadBarInterval = setInterval(function () {
         if (players[data[0]].alive === true && currentPlayer.playerNumber == data[0]) {
-            $("#hitPoints").html(100).css({
-                width: "100%"
-            });
-            $("#armor").html(0).css({
-                width: "0%"
-            });
+            $("#hitPoints").css({width: "100%"});
+            $("#hpAmount").html(100);
+            $("#armor").css({width: "0%"});
+            $("#armorAmount").html(0);
             clearInterval(reloadBarInterval);
         }
     }, 400);
@@ -407,12 +405,11 @@ function applyBonus(data) {
 
     effectsCanvas.clearRect(data[2].position.x, data[2].position.y, 32, 32);
     if (currentPlayer.playerNumber == data[1]) {
-        $("#hitPoints").html(data[3]).css({
-            width: data[3] + "%"
-        });
-        $("#armor").html(data[4]).css({
-            width: data[4] + "%"
-        });
+
+        $("#hitPoints").css({width: data[3] + "%"});
+        $("#hpAmount").html(data[3]);
+        $("#armor").css({width: data[4] + "%"});
+        $("#armorAmount").html(data[4]);
 
         for (var key in data[5]) {
             if (data[5].hasOwnProperty(key) && key === currentPlayer.currentWeapon) {
@@ -557,12 +554,10 @@ function handleExplosion(data) {
         }
     }
     if (currentPlayer.playerNumber == data[3]) {
-        $("#hitPoints").html(data[4]).css({
-            width: data[4] + "%"
-        });
-        $("#armor").html(data[5]).css({
-            width: data[5] + "%"
-        });
+        $("#hitPoints").css({width: data[4] + "%"});
+        $("#hpAmount").html(data[4]);
+        $("#armor").css({width: data[5] + "%"});
+        $("#armorAmount").html(data[5]);
     }
 }
 
@@ -627,12 +622,10 @@ function handlePlayer(data) {
         t2.push(parseInt(key));
         if (players[key] == undefined) {
             players[key] = new Player(data[key].position.x, data[key].position.y, key);
-            $("#hitPoints").html(data[key].hitPoints).css({
-                width: data[key].hitPoints + "%"
-            });
-            $("#armor").html(data[key].armor).css({
-                width: data[key].armor + "%"
-            });
+            $("#hitPoints").css({width: data[key].hitPoints + "%"});
+            $("#hpAmount").html(data[key].hitPoints);
+            $("#armor").css({width: data[key].armor + "%"});
+            $("#armorAmount").html(data[key].armor);
         }
         if (data[key].hashCode == clientHash && data[key].playerNumber == currentPlayer.playerNumber) {
             iAmOnline = true;
@@ -974,12 +967,11 @@ function explodeMine(data) {
     bottomCanvas.clearRect(data[1].x, data[1].y, 32, 32);
 
     if (currentPlayer.playerNumber == data[0]) {
-        $("#hitPoints").html(data[2]).css({
-            width: data[2] + "%"
-        });
-        $("#armor").html(data[3]).css({
-            width: data[3] + "%"
-        });
+        $("#hitPoints").css({width: data[2] + "%"});
+        $("#hpAmount").html(data[2]);
+        $("#armor").css({width: data[3] + "%"});
+        $("#armorAmount").html(data[4]);
+
         socket.emit("get_current_weapon", {gameId: currentGameId, playerNumber: currentPlayer.playerNumber});
     }
 }
