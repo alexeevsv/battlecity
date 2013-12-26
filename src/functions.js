@@ -229,6 +229,8 @@ function _alert(title, message) {
             title: title,
             open: function () {
                 $("#.ui-button").remove();
+                $('.ui-widget-overlay').css({opacity: ".7"}).hide().fadeIn();
+
             },
             buttons: [
                 {
@@ -434,21 +436,6 @@ function showEvent(title) {
         eventsCanvas.drawImage(engine.image, imagePosition[title].x, imagePosition[title].y, 32, 32, 0, 0, 64, 64);
         if (title == "invincibility" || title == "invisibility") {
             var startWidth, width;
-
-            /*$("#timer").show();
-             $("#timerTitle").html("invincibility");
-             $("#timerLine").css({width: "100%"});
-             startWidth = width = parseInt($("#timerLine").css("width"));
-             clearInterval(invincibilityInterval);
-             invincibilityInterval = setInterval(function () {
-             width = width - (startWidth * 0.05);
-             if (width <= 0) {
-             console.log("stopped");
-             clearInterval(invincibilityInterval);
-             $("#timer").hide();
-             }
-             $("#timerLine").css({width: width});
-             }, 1000)*/
             $("#" + title).remove();
             $("<div/>")
                 .attr({class: "timer", id: title})
@@ -615,9 +602,7 @@ function checkPing() {
 function handlePlayer(data) {
 
     var t1 = [], t2 = [], iAmOnline = false;
-    for (var i = 1; i <= maxPlayersAmount; i++) {
-        t1.push(i);
-    }
+    t1 = t1.fill(1, maxPlayersAmount);
     for (var key in data) {
         t2.push(parseInt(key));
         if (players[key] == undefined) {

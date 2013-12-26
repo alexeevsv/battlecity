@@ -145,3 +145,11 @@ var imagePosition = {
 
 }
 
+Array.prototype.fill = function (a, b) {
+    var r = [];
+    for (var i = a; i <= b; i++) {
+        r.push(i);
+    }
+    return r;
+}
+
