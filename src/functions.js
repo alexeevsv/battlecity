@@ -312,7 +312,6 @@ function addListener(event) {
                     direction: currentPlayer.direction,
                     gameId: currentGameId
                 });
-                playSound("tank_shot");
                 fireInterval = setInterval(function () {
                     if (keysPressed[90] === true) {
                         socket.emit("fire", {
@@ -320,7 +319,6 @@ function addListener(event) {
                             direction: currentPlayer.direction,
                             gameId: currentGameId
                         });
-                        playSound("tank_shot");
                     } else {
                         clearInterval(fireInterval);
                         fireInterval = undefined;
@@ -509,6 +507,7 @@ function createBullet(data, bulletType) {
     }, data[3], 13, data[4], bulletType);
     bullet.start();
     bullets[data[0]] = bullet;
+    playSound("tank_shot");
 }
 
 function createMine(data) {
