@@ -14,6 +14,7 @@ var currentPlayer, clientHash, players = {},
     renderInterval, currentGameId, refreshGamesInterval, isMoving = false, _moveInterval,
     lastConnectionCheck = 0, checkConnectionInterval, currentPing, fireInterval, timers = {};
 
+
 $(function () {
 
 
@@ -120,8 +121,8 @@ $(function () {
         explodeMine(data);
     });
 
-    socket.on("bonus_deleted", function(data){
-       deleteBonus(data);
+    socket.on("bonus_deleted", function (data) {
+        deleteBonus(data);
     });
 
 })

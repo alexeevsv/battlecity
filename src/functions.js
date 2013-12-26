@@ -312,13 +312,15 @@ function addListener(event) {
                     direction: currentPlayer.direction,
                     gameId: currentGameId
                 });
+                playSound("tank_shot");
                 fireInterval = setInterval(function () {
                     if (keysPressed[90] === true) {
                         socket.emit("fire", {
                             playerNumber: currentPlayer.playerNumber,
                             direction: currentPlayer.direction,
                             gameId: currentGameId
-                        })
+                        });
+                        playSound("tank_shot");
                     } else {
                         clearInterval(fireInterval);
                         fireInterval = undefined;
@@ -327,6 +329,10 @@ function addListener(event) {
             }
         }
     }
+}
+
+function playSound(type) {
+    createjs.Sound.play(type, createjs.Sound.INTERUPT_LATE);
 }
 
 function move(direction) {
@@ -382,6 +388,8 @@ function murderPlayer(data) {
         players[data[0]].alive = false;
         $("#p" + data[2] + "Score").html(data[3]);
     }
+
+    playSound("death");
 
     var reloadBarInterval = setInterval(function () {
         if (players[data[0]].alive === true && currentPlayer.playerNumber == data[0]) {
@@ -524,6 +532,8 @@ function handleExplosion(data) {
         bullets[data[0]].alive = false;
     }
     explode(data[1].x, data[1].y);
+
+    playSound("explosion");
 
     if (hp !== undefined && hp !== null) {
         if (hp <= 0) {
@@ -806,6 +816,23 @@ function establishConnect(gameId) {
             weaponsCanvas = document.getElementById("weaponImage").getContext("2d");
             eventsCanvas = document.getElementById("eventImage").getContext("2d");
 
+            var assetsPath = "resources/sounds/";
+            var manifest = [
+                {id: "tank_shot", src: "Game-Shot.ogg", data: 6},
+                {id: "explosion", src: "Game-Break.ogg", data: 6},
+                {id: "death", src: "Game-Death.ogg"}
+            ];
+
+            createjs.Sound.alternateExtensions = ["mp3"];
+            var preload = new createjs.LoadQueue(true, assetsPath);
+            preload.installPlugin(createjs.Sound);
+            preload.loadManifest(manifest);
+
+            preload.addEventListener("complete", function () {
+//                createjs.Sound.play("music", {interrupt: createjs.Sound.INTERRUPT_NONE, loop: -1, volume: 0.4})
+            });
+
+
             socket.emit("player_connected", {
                 clientHash: clientHash,
                 gameId: currentGameId
@@ -949,6 +976,7 @@ function explodeMine(data) {
     //data[3] - player armor
 
     explode(data[1].x, data[1].y);
+    playSound("explosion");
     bottomCanvas.clearRect(data[1].x, data[1].y, 32, 32);
 
     if (currentPlayer.playerNumber == data[0]) {
