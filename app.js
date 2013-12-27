@@ -26,15 +26,18 @@ app.use(express.static(__dirname));
 start();
 
 function initMap(gameId) {
-    var rs = fs.createReadStream("resources/map.json");
-    rs.on("data", function (data) {
+    var data = {};
+    if (countObjElements(games[gameId].mapLayout) == 0) {
         try {
-            games[gameId].map = JSON.parse(data.toString());
-            io.sockets.in(gameId).emit("load_map", games[gameId].map);
+            data = fs.readFileSync("resources/map.json");
+            games[gameId].mapLayout = JSON.parse(data.toString());
         } catch (e) {
             logEvent("init map failed" + e.message);
         }
-    })
+    }
+
+    games[gameId].map = JSON.parse(JSON.stringify(games[gameId].mapLayout));
+    io.sockets.in(gameId).emit("load_map", games[gameId].mapLayout);
 }
 
 
@@ -168,16 +171,16 @@ function start() {
 
         socket.on("save_map", function (data) {
             if (games[data.gameId] != undefined) {
-                games[data.gameId].map = data.map;
-                var ws = fs.createWriteStream("resources/map.json");
-                ws.on("error", function (err) {
-                    logEvent(err);
-                });
-                ws.on("open", function () {
-                    ws.write(JSON.stringify(data.map));
-                    ws.end();
-                    logEvent("map saved");
-                });
+                games[data.gameId].mapLayout = data.map;
+                /*var ws = fs.createWriteStream("resources/map.json");
+                 ws.on("error", function (err) {
+                 logEvent(err);
+                 });
+                 ws.on("open", function () {
+                 ws.write(JSON.stringify(data.map));
+                 ws.end();
+                 logEvent("map saved");
+                 });*/
             }
         });
 
@@ -245,7 +248,7 @@ function start() {
 
         setInterval(checkBulletsExistanse, 5);
 
-        setInterval(handleBonuses, 20000)
+        setInterval(handleBonuses, 15000)
 
     });
 
@@ -316,6 +319,7 @@ function createGame(data) {
         bonuses: {},
         bullets: {},
         mines: {},
+        mapLayout: {},
         map: {}
     };
     initMap(gameId);
@@ -580,7 +584,8 @@ function move(data) {
                             currentPlayerNumber,
                             mine.position,
                             player.hitPoints,
-                            player.armor
+                            player.armor,
+                            m
                         ]);
                     } catch (e) {
                         logEvent(e.stack);
@@ -720,7 +725,7 @@ function handleBonuses() {
                     if (games[gameId].bonuses.hasOwnProperty(key)) {
                         bonus = games[gameId].bonuses[key];
                         if (Date.now() - bonus.createdTime >= 30000) {
-                            io.sockets.in(gameId).emit("bonus_deleted", bonus);
+                            io.sockets.in(gameId).emit("bonus_deleted", {position: bonus.position, bonusName: key});
                             delete games[gameId].bonuses[key];
                         }
                     }

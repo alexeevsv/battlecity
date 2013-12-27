@@ -204,7 +204,7 @@ function authorizePlayer(data) {
                 $("#reloadMapBtn, #drawLevel").remove();
             }
             if (player.host === true && player.playerNumber == currentPlayer.playerNumber) {
-                $("#someMessage").html("You are the host");
+//                $("#someMessage").html("You are the host");
             }
         }
 
@@ -412,6 +412,8 @@ function applyBonus(data) {
     var bonusTitle = (data[6] !== null ? data[6] : data[0] );
 
     effectsCanvas.clearRect(data[2].position.x, data[2].position.y, 32, 32);
+    delete bonuses[data[0]];
+
     if (currentPlayer.playerNumber == data[1]) {
 
         $("#hitPoints").css({width: data[3] + "%"});
@@ -468,11 +470,13 @@ function showEvent(title) {
 function createBonus(data) {
     // data[0] - bonus name
     // data[1] - bonus data {}
+
+    bonuses[data[0]] = data[1];
     effectsCanvas.drawImage(engine.image, imagePosition[data[0]].x, imagePosition[data[0]].y, 32, 32, data[1].x, data[1].y, 32, 32);
 }
 
 function startProjectile(data) {
-    //data[0] - bulletNum
+    //data[0] - projectileNum
     //data[1] - xPos
     //data[2] - yPos
     //data[3] - direction
@@ -514,6 +518,7 @@ function createMine(data) {
     var x = data[1];
     var y = data[2];
 
+    mines[data[0]] = {x: data[1], y: data[2]};
     bottomCanvas.drawImage(engine.image, imagePosition.mine.x, imagePosition.mine.y, 32, 32, x, y, 32, 32);
 }
 
@@ -565,6 +570,14 @@ function explode(x, y) {
         if (k < explosion.length) {
             effectsCanvas.drawImage(engine.image, explosion[k].x, explosion[k].y, 32, 32, x, y, 32, 32);
         } else {
+            var bonus;
+            for (var bonusName in bonuses) {
+                if (bonuses.hasOwnProperty(bonusName)) {
+                    bonus = bonuses[bonusName];
+                    effectsCanvas.clearRect(bonus.x, bonus.y, 32, 32);
+                    effectsCanvas.drawImage(engine.image, imagePosition[bonusName].x, imagePosition[bonusName].y, 32, 32, bonus.x, bonus.y, 32, 32);
+                }
+            }
             clearInterval(interval);
         }
         k++;
@@ -955,7 +968,7 @@ function redefineHost(data) {
     });
     if (data.playerNumber == currentPlayer.playerNumber) {
         showHostBtns();
-        $("#someMessage").html("You are the host");
+//        $("#someMessage").html("You are the host");
     }
 }
 
@@ -973,21 +986,36 @@ function explodeMine(data) {
     //data[1] - mine position {x : 0, y : 0}
     //data[2] - player hit points
     //data[3] - player armor
+    //data[4] - mine id
 
     explode(data[1].x, data[1].y);
     playSound("explosion");
     bottomCanvas.clearRect(data[1].x, data[1].y, 32, 32);
 
     if (currentPlayer.playerNumber == data[0]) {
+
         $("#hitPoints").css({width: data[2] + "%"});
         $("#hpAmount").html(data[2]);
+
         $("#armor").css({width: data[3] + "%"});
-        $("#armorAmount").html(data[4]);
+        $("#armorAmount").html(data[3]);
 
         socket.emit("get_current_weapon", {gameId: currentGameId, playerNumber: currentPlayer.playerNumber});
     }
+
+    var mine;
+
+    delete mines[data[4]];
+    for (var key in mines) {
+        if (mines.hasOwnProperty(key)) {
+            mine = mines[key];
+            bottomCanvas.drawImage(engine.image, imagePosition.mine.x, imagePosition.mine.y, 32, 32, mine.x, mine.y, 32, 32);
+        }
+    }
+
 }
 
 function deleteBonus(data) {
+    delete bonuses[data.bonusName];
     effectsCanvas.clearRect(data.position.x, data.position.y, 32, 32);
 }

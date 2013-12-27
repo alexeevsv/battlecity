@@ -1,6 +1,6 @@
 var currentPlayer, clientHash, players = {},
     maxPlayersAmount = 3,
-    bullets = {}, mines = {},
+    bullets = {}, mines = {}, bonuses = {},
     explosion = imagePosition.explosion,
     mapField, mapCanvas, map = {},
     createdMap = {},
