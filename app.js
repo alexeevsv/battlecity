@@ -11,7 +11,6 @@ var express = require("express"),
     Player = require("player"),
     Enum = require("enum"),
     fs = require("fs"),
-    lastPositionSent = 0,
     games = {};
 
 server.listen(3000);
