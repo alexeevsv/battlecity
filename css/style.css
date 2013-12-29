@@ -459,3 +459,7 @@ body {
 #gameName, #gamePassword {
     text-align: center;
 }
+
+#_playerNameInput{
+    text-align: center;
+}

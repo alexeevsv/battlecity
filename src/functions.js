@@ -249,6 +249,52 @@ function _alert(title, message) {
         })
 }
 
+function _prompt(title, message) {
+
+    var setPlayerName = function(){
+        $("#playerName").html($("#_playerNameInput").val().slice(0, 7));
+
+        socket.emit("change_player_name", {
+            gameId: currentGameId,
+            playerName: $("#_playerNameInput").val(),
+            playerNumber: currentPlayer.playerNumber
+        });
+
+        renderInterval = setInterval(render, 10);
+    }
+
+    $("<div/>")
+        .attr({class: "alertDialog"})
+        .html(message + "<br />")
+        .append($("<input/>").attr({id: "_playerNameInput"}).keydown(function(e){
+            if(e.keyCode == 13){
+                setPlayerName();
+                $(".ui-widget-overlay.ui-front, .ui-dialog").remove();
+            }
+        }))
+        .dialog({
+            modal: true,
+            resizable: false,
+            width: 300,
+            height: 200,
+            draggable: false,
+            title: title,
+            open: function () {
+                $("#.ui-button").remove();
+                $('.ui-widget-overlay').css({opacity: ".7"}).hide().fadeIn();
+            },
+            buttons: [
+                {
+                    text: "Ok",
+                    click: function () {
+                        setPlayerName();
+                        $(this).dialog("close");
+                    }
+                }
+            ]
+        })
+}
+
 function checkConnection() {
     if (lastConnectionCheck != 0 && Date.now() - lastConnectionCheck > 7000) {
         lastConnectionCheck = 0;
@@ -388,6 +434,11 @@ function murderPlayer(data) {
     }
 
     playSound("death");
+
+    eventsCanvas.clearRect(0, 0, 64, 64);
+    $("#eventTitle").html("Events:");
+    $("#eventMessage").html("");
+    $("#timers").html("");
 
     var reloadBarInterval = setInterval(function () {
         if (players[data[0]].alive === true && currentPlayer.playerNumber == data[0]) {
@@ -692,6 +743,7 @@ function applyBattlefieldInfo(data) {
     //data[n][5] - playerNumber
     //data[n][6] - player alive
     //data[n][7] - player visible
+    //data[n][8] - player invincible
 
     for (var i = 0; i < data.length; i++) {
         if (players[data[i][5]] != undefined) {
@@ -703,6 +755,7 @@ function applyBattlefieldInfo(data) {
             players[data[i][5]].prevDirection = data[i][3];
             players[data[i][5]].alive = data[i][6];
             players[data[i][5]].visible = data[i][7];
+            players[data[i][5]].invincible = data[i][8];
         }
     }
 }
@@ -899,7 +952,9 @@ function establishConnect(gameId) {
 
             $("#changeNameBtn").click(handleChangeName);
 
-            renderInterval = setInterval(render, 10);
+            _prompt("Enter your nickname", "Type your nickname here!");
+
+
         }).appendTo("body");
 }
 

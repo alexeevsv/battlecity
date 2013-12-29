@@ -53,13 +53,13 @@ function start() {
             }
         });
 
-        socket.on("get_current_games", function (data) {
+        socket.on("get_current_games", function () {
             var tempGames = {};
             for (var key in games) {
                 if (tempGames[key] == undefined) {
                     tempGames[key] = {};
                 }
-                tempGames[key].players = games[key].players;
+                tempGames[key].players = playersData(key);
                 tempGames[key].gameName = games[key].gameName;
             }
             try {
@@ -171,15 +171,6 @@ function start() {
         socket.on("save_map", function (data) {
             if (games[data.gameId] != undefined) {
                 games[data.gameId].mapLayout = data.map;
-                /*var ws = fs.createWriteStream("resources/map.json");
-                 ws.on("error", function (err) {
-                 logEvent(err);
-                 });
-                 ws.on("open", function () {
-                 ws.write(JSON.stringify(data.map));
-                 ws.end();
-                 logEvent("map saved");
-                 });*/
             }
         });
 
@@ -243,15 +234,13 @@ function start() {
             }
         });
 
-        setInterval(checkPlayersConnections, 200);
-
-        setInterval(checkBulletsExistanse, 5);
-
-        setInterval(handleBonuses, 25000)
-
     });
 
+    setInterval(checkPlayersConnections, 200);
 
+    setInterval(checkBulletsExistanse, 5);
+
+    setInterval(handleBonuses, Enum.bonusTimeoutMs);
 }
 
 function playersData(gameId) {
@@ -791,7 +780,8 @@ function sendBattlefieldInfo(gameId) {
                 player.score,
                 key,
                 player.alive,
-                player.visible
+                player.visible,
+                player.invincible
             ]);
         }
         try {

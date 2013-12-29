@@ -7,14 +7,23 @@ function Player(x, y, playerNumber) {
     this.playerName = "Player " + playerNumber;
     this.currentWeapon = "cannon";
     this.visible = true;
+    this.invincible = false;
 }
 
 Player.prototype.render = function () {
     var angle = this.figureAngle(this.direction);
+
+    if (this.invincible) {
+        engine.canvas.fillStyle = "rgba(200, 0, 0, 0.5)";
+        engine.canvas.fillRect(this.position.x - 2, this.position.y - 2, 36, 36);
+        engine.canvas.clearRect(this.position.x, this.position.y, 32, 32);
+    }
+
     engine.drawImg(
         engine.image,
         imagePosition.players[this.playerNumber].x, imagePosition.players[this.playerNumber].y,
         32, 32, this.position.x, this.position.y, 32, 32, true, angle);
+
 }
 
 Player.prototype.figureAngle = function (direction) {
