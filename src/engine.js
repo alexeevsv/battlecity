@@ -73,7 +73,8 @@ var imagePosition = {
     players: {
         1: {x: 128, y: 0},
         2: {x: 160, y: 0},
-        3: {x: 192, y: 0}
+        3: {x: 192, y: 0},
+        4: {x: 224, y: 0}
     },
     cannonProjectile: {
         x: 252,

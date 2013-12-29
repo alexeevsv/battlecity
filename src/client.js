@@ -1,5 +1,5 @@
 var currentPlayer, clientHash, players = {},
-    maxPlayersAmount = 3,
+    maxPlayersAmount = 4,
     bullets = {}, mines = {}, bonuses = {},
     explosion = imagePosition.explosion,
     mapField, mapCanvas, map = {},

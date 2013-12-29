@@ -6,7 +6,7 @@ var express = require("express"),
     }),
     messages = [],
     path = require("path"),
-    maxPlayersAmount = 3,
+    maxPlayersAmount = 4,
     Bullet = require("bullet"),
     Player = require("player"),
     Enum = require("enum"),
@@ -281,7 +281,7 @@ function isLocked(gameId) {
         result.isLocked = true;
         result.reason = "password lock";
     }
-    if (games[gameId] != undefined && countObjElements(games[gameId].players) >= 3) {
+    if (games[gameId] != undefined && countObjElements(games[gameId].players) >= maxPlayersAmount) {
         result.isLocked = true;
         result.reason = "no free slots";
     }

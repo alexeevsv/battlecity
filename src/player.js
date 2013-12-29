@@ -19,10 +19,16 @@ Player.prototype.render = function () {
         engine.canvas.clearRect(this.position.x, this.position.y, 32, 32);
     }
 
+    if(!this.visible){
+        engine.canvas.globalAlpha = 0.5;
+    }
+
     engine.drawImg(
         engine.image,
         imagePosition.players[this.playerNumber].x, imagePosition.players[this.playerNumber].y,
         32, 32, this.position.x, this.position.y, 32, 32, true, angle);
+
+    engine.canvas.globalAlpha = 1;
 
 }
 

@@ -162,6 +162,7 @@ function authorizePlayer(data) {
     //data[3] - bonuses
     //data[4] - players
     //data[5] - mines
+
     if (data[0] === true) {
         currentPlayer = new Player(data[2].x, data[2].y, data[1]);
 
@@ -169,7 +170,7 @@ function authorizePlayer(data) {
             var bonus;
             for (var bonusName in data[3]) {
                 bonus = data[3][bonusName];
-                effectsCanvas.drawImage(engine.image, imagePosition[bonusName].x, imagePosition[bonusName].y, 32, 32, bonus.x, bonus.y, 32, 32);
+                effectsCanvas.drawImage(engine.image, imagePosition[bonusName].x, imagePosition[bonusName].y, 32, 32, bonus.position.x, bonus.position.y, 32, 32);
             }
             var mine;
             for (var key in data[5]) {
@@ -701,7 +702,7 @@ function handlePlayer(data) {
         clearInterval(checkConnectionInterval);
     }
 
-    $("#p1Wrapper, #p2Wrapper, #p3Wrapper").hide();
+    $("#p1Wrapper, #p2Wrapper, #p3Wrapper, #p4Wrapper").hide();
     for (var key in data) {
         if (data.hasOwnProperty(key)) {
             $("#p" + data[key].playerNumber + "Wrapper").show();
