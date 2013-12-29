@@ -248,7 +248,7 @@ function start() {
 
         setInterval(checkBulletsExistanse, 5);
 
-        setInterval(handleBonuses, 15000)
+        setInterval(handleBonuses, 25000)
 
     });
 
