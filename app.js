@@ -670,7 +670,7 @@ function checkPlayersConnections() {
         for (var k in games[key].players) {
             player = games[key].players[k];
             if (now - player.lastUpdate > 3 && player.lastUpdate != 0) {
-                logEvent("player_" + k + " disconnected; avgping: " + games[key].players[k].getAvgPing());
+                logEvent(player.playerName + " disconnected; avgping: " + player.getAvgPing());
                 wasHost = games[key].players[k].host;
                 delete games[key].players[k];
                 if (wasHost) redefineHost(key);
@@ -835,5 +835,5 @@ function logEvent(message) {
             }
             return v;
         };
-    console.log(lz(time.getHours()) + ":" + lz(time.getMinutes()) + ":" + lz(time.getSeconds()) + " " + lz(time.getDate()) + "." + lz(time.getMonth()) + "." + (time.getYear() + 1900) + " : " + message);
+    console.log(lz(time.getHours()) + ":" + lz(time.getMinutes()) + ":" + lz(time.getSeconds()) + " " + lz(time.getDate()) + "." + lz(time.getMonth() + 1) + "." + (time.getYear() + 1900) + " : " + message);
 }
