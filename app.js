@@ -26,7 +26,7 @@ start();
 
 function initMap(gameId) {
     var data = {};
-    if (countObjElements(games[gameId].mapLayout) == 0) {
+    if (games[gameId] !== undefined && countObjElements(games[gameId].mapLayout) == 0) {
         try {
             data = fs.readFileSync("resources/map.json");
             games[gameId].mapLayout = JSON.parse(data.toString());
