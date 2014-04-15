@@ -1,3 +1,4 @@
+/*
 var botInterval, fireInterval;
 
 function botStart() {
@@ -24,4 +25,4 @@ function botStart() {
 function botStop() {
     clearInterval(botInterval);
     clearInterval(fireInterval);
-}
+}*/
